@@ -1,7 +1,7 @@
 #include <iostream>
 #include<cuda_runtime.h>
 #include<cstring>
-#define BLOCK_SIZE 2
+#define BLOCK_SIZE 20
 using namespace std;
 //CUDA Kernel
 __global__ void matrixScaling(float * A,float *C,float k, int N) {
@@ -52,7 +52,7 @@ int main() {
     dim3 gridsize((N + BLOCK_SIZE - 1) / BLOCK_SIZE, (N + BLOCK_SIZE - 1) / BLOCK_SIZE);
     //Copy from RAM to VRAM
     cudaMemcpy(Ad,Ah,size,cudaMemcpyHostToDevice);
-    if (command == "START") {//if (strcmp(command,"START")==0) {
+    if (strcmp(command,"START")==0) {
         matrixScaling<<<gridsize,blocksize>>>(Ad,Cd,k,N);
         //Synchronism of device and host
         cudaDeviceSynchronize();        //Copy from VRAM to RAM
