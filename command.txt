@@ -1,0 +1,1 @@
+nvcc-m 64-resource-usage -gencode arch=compute_70,code=sm_70-I../Common/-o sgemm./sgemm.cu
