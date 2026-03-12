@@ -1,0 +1,71 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<cuda.h>
+
+#define N 2048
+#define BLOCK_SIZE 32
+
+__global__ void camera_frame_transpose(int *input, int *output)
+{
+    __shared__ int tile[BLOCK_SIZE][BLOCK_SIZE];
+
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+    int localX = threadIdx.x;
+    int localY = threadIdx.y;
+
+    int index = y * N + x;
+
+    tile[localX][localY] = input[index];
+
+    __syncthreads();
+
+    int tx = threadIdx.x + blockIdx.y * blockDim.x;
+    int ty = threadIdx.y + blockIdx.x * blockDim.y;
+
+    int tindex = ty * N + tx;
+
+    output[tindex] = tile[localY][localX];
+}
+
+void fill_array(int *data)
+{
+    for(int i=0;i<N*N;i++)
+        data[i] = i;
+}
+
+int main()
+{
+    int *a,*b;
+    int *d_a,*d_b;
+
+    int size = N*N*sizeof(int);
+
+    a = (int*)malloc(size);
+    b = (int*)malloc(size);
+
+    fill_array(a);
+
+    cudaMalloc((void**)&d_a,size);
+    cudaMalloc((void**)&d_b,size);
+
+    cudaMemcpy(d_a,a,size,cudaMemcpyHostToDevice);
+
+    dim3 block(BLOCK_SIZE,BLOCK_SIZE);
+    dim3 grid(N/BLOCK_SIZE,N/BLOCK_SIZE);
+
+    camera_frame_transpose<<<grid,block>>>(d_a,d_b);
+
+    cudaMemcpy(b,d_b,size,cudaMemcpyDeviceToHost);
+
+    printf("Transpose completed for camera frame\n");
+
+    cudaFree(d_a);
+    cudaFree(d_b);
+
+    free(a);
+    free(b);
+
+    return 0;
+}
